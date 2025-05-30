@@ -1,0 +1,63 @@
+Use PCA on training data (figure out how to decide the thredhold of PCA)
+Six models: PCA+NN, PCA+SVM, RF(do not use dim reduction!), PCA+QDA, PCA+KNN, PCA+LR
+
+Coding:
+
+    global var:
+        data_path
+        N_f # num of folders of CV
+        model_set # set of models to be compared
+        set_of_para # set of hyperpara for each models(note that unless RF, other models should contain N_dim:# dimension of features to be retained after dimension reduction PCA)
+
+
+    data var:
+        dim_feat
+        num_labels
+
+
+    function:
+        dimension_reduction: PCA
+
+
+
+    pipeline:
+
+        data_import
+        data_cleaning
+
+
+
+
+        double CV:
+            outer folder: i \in [1,...,N_f]
+                data[block[i]] as test data(test)
+                data[block[(-i)]] as training-validate data(tr-val) # block[(-i)] means all blocks of data with indexes != i
+                test_PCA = PCA(test)
+                tr-val_PCA = PCA(tr-val)
+                inner folder: j \in [1, ..., N_f]
+                    tr-val[block[j]] as val data
+                    tr-val[block[(-j)]] as tr data
+                    val_PCA = PCA(val)
+                    tr_PCA = PCA(tr)
+                    model index: k \in [1, ..., N_model]
+                        para : S \in set_of_para
+                            if model[k]==RF:
+                                fit(model(para[S])[k], tr)
+                                prd = predict(model(para[l])[k], val)
+                            else
+                                fit(model(para[S])[k], tr_PCA)
+                                prd = predict(model(para[l])[k], val_PCA)
+                            score[j][k][S] = eval(prd, val)
+                mean_score = mean(score, axis = j) 
+                model index: k \in [1, ..., N_model] 
+                    best_para = argmax_S(mean_score, k)
+                    if model[k] == RF:
+                        fit(model(best_para)[k], tr-val)
+                        prd = predict(model(best_para)[k], test)
+                    else
+                        fit(model(best_para)[k], tr-val_PCA)
+                        prd = predict(model(best_para)[k], test_PCA)
+                    test_score[i][k] = eval(prd, test)
+            mean_test_score = mean(test_score, axis = i)
+
+
