@@ -1,5 +1,5 @@
 Use PCA on training data (figure out how to decide the thredhold of PCA)
-Six models: PCA+NN, PCA+SVM, RF(do not use dim reduction!), PCA+QDA, PCA+KNN, PCA+LR
+Six models: FS+PCA+NN, FS+PCA+SVM, RF(do not use dim reduction!), FS+PCA+QDA, FS+PCA+KNN, FS+PCA+LR (FS: feature selection: filter method with F: f_classif)
 
 Coding:
 
@@ -7,7 +7,8 @@ Coding:
         data_path
         N_f # num of folders of CV
         model_set # set of models to be compared
-        set_of_para # set of hyperpara for each models(note that unless RF, other models should contain N_dim:# dimension of features to be retained after dimension reduction PCA)
+        set_of_para # set of hyperpara for each models(note that unless RF, other models should contain K:#num of features to be retained after filter method and N_dim:# dimension of features to be retained after dimension reduction PCA,
+        also note that para of K = dim_feat and skipping PCA should be allowed)(also also note that, you should do PCA on training data set, and then apply the obtained PCA on test and val data set, so as feature selection)
 
 
     data var:
@@ -28,36 +29,28 @@ Coding:
 
 
 
-        double CV:
+        double CV:(at each fitting, this pipeline should be followed:
+        feature selection(not for RF) \to PCA(not for RF) \to fitting)
             outer folder: i \in [1,...,N_f]
                 data[block[i]] as test data(test)
                 data[block[(-i)]] as training-validate data(tr-val) # block[(-i)] means all blocks of data with indexes != i
-                test_PCA = PCA(test)
-                tr-val_PCA = PCA(tr-val)
                 inner folder: j \in [1, ..., N_f]
                     tr-val[block[j]] as val data
                     tr-val[block[(-j)]] as tr data
-                    val_PCA = PCA(val)
-                    tr_PCA = PCA(tr)
                     model index: k \in [1, ..., N_model]
                         para : S \in set_of_para
-                            if model[k]==RF:
-                                fit(model(para[S])[k], tr)
-                                prd = predict(model(para[l])[k], val)
-                            else
-                                fit(model(para[S])[k], tr_PCA)
-                                prd = predict(model(para[l])[k], val_PCA)
+                            fit(model(para[S])[k], tr)
+                            prd = predict(model(para[l])[k], val)
                             score[j][k][S] = eval(prd, val)
+                            
                 mean_score = mean(score, axis = j) 
+
                 model index: k \in [1, ..., N_model] 
                     best_para = argmax_S(mean_score, k)
-                    if model[k] == RF:
-                        fit(model(best_para)[k], tr-val)
-                        prd = predict(model(best_para)[k], test)
-                    else
-                        fit(model(best_para)[k], tr-val_PCA)
-                        prd = predict(model(best_para)[k], test_PCA)
+                    fit(model(best_para)[k], tr-val)
+                    prd = predict(model(best_para)[k], test)
                     test_score[i][k] = eval(prd, test)
             mean_test_score = mean(test_score, axis = i)
+
 
 
