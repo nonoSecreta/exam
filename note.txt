@@ -4,12 +4,12 @@
 used to record and make the experiment tractable.**
 **use relative path + env var(like DATA_ROOT)avoid absolute paths**
 
-Use PCA on training data (figure out how to decide the thredhold of PCA)
-Six models: FS+PCA+NN, FS+PCA+SVM, RF(do not use dim reduction!), FS+PCA+QDA, FS+PCA+KNN, FS+PCA+LR (FS: feature selection: filter method with F: f_classif)
+
+Six models: FS+PCA+NN, FS+PCA+SVM, RF(do not use dim reduction and FS!), FS+PCA+QDA, FS+PCA+KNN, FS+PCA+LR (FS: feature selection: filter method with F: f_classif)
 figure that need to be saved(each of them should have their own directory):
-    All of these metrics:Accuracy / Balanced Accuracy / Macro-F1 and "Per-class F1 / Recall / Specificity / Precision" for each test folder, name: {matric_name}_{model_name}_{test_folder_index} (note that Per-class F1 / Recall / Specificity / Precision should be over all classes for each model at each outer fold)
-    for each folder index i, save all indexes(the id of the sample) of test samples: test_{i}[I], and the best paras for each model name: test_index_{test_folder_index}, best_para_{model_name}_{test_folder_index}
-    all the plots and the data used by the plot name: {plot_name}_{data_name}(note! one directory for one type of plot)
+    All of these metrics:Accuracy / Balanced Accuracy / Macro-F1 and "Per-class F1 / Recall / Specificity / Precision" for each test folder, name: {matric_name}_{model_name}_{test_folder_index} (note that Per-class F1 / Recall / Specificity / Precision should be over all label classes for each model at each outer fold)
+    for each folder index i, save all indexes(the id of the sample) of test samples: test_{i}[I], and the best paras for each model. name: test_index_{test_folder_index}, best_para_{model_name}_{test_folder_index}
+    all the plots and the data used by the plot. name: {plot_name}_{data_name}(note! one directory for one type of plot)
     Except of SVM, all the predict probability vector of the output of each model for each test samples: saved as np array pred_dist_{model_name}_{test_folder_index} each row: sample id | pred dist
     for each of all test fold, save the predict result for each model at each sample. name: pred_res_{model_name}_{test_folder_index} each row: sample id | pred result
 
@@ -36,9 +36,7 @@ Coding:
         num_labels #num of labels
 
 
-    function:
-        feature_selection: filter
-        dimension_reduction: PCA
+
 
 
 
@@ -55,7 +53,7 @@ Coding:
 
 
 
-        double CV(Stratified K-Fold, use sklearn.model_selection ParameterSampler):(at each fitting, this pipeline should be followed:
+        double CV(use sklearn.model_selection ParameterSampler):(at each fitting, this pipeline should be followed:
         feature selection(not for RF) \to PCA(not for RF) \to fitting)
             outer folder: i \in [1,...,N_f]
                 data[block[i]] as test data(test)
@@ -67,7 +65,7 @@ Coding:
                         para : S \in set_of_para(this step, use sklearn.model_selection ParameterSampler)
                             fit(model(para[S])[k], tr)
                             prd = predict(model(para[l])[k], val)
-                            score[j][k][S] = eval(prd, val) # F1 score or balance accuracy
+                            score[j][k][S] = eval(prd, val) # balance accuracy
                             
                 mean_score = mean(score, axis = j) 
 
