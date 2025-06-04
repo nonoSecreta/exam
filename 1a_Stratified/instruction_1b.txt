@@ -1,0 +1,39 @@
+calibration:
+    现在，请执行以下任务：
+
+    对以下 5 个模型：FS_PCA_NN、RF、FS_PCA_KNN、FS_PCA_QDA、FS_PCA_LR，跳过 SVM。
+
+    对每个模型，将其在 10 个 outer test folds 上的所有预测结果（pred_dist_X_j.npy 文件）按类别合并；
+
+    同步加载对应 fold 的 y_true 标签（从匹配的 test_index_j.npy 中取得索引），构建全体 test 样本的标签；
+
+    对每个模型-类别组合（共 5×7），构造 One-vs-Rest 的二分类标签，并获取该类别的预测概率；
+
+    计算该类别的 calibration curve：
+
+    使用 n_bins=10；
+
+    设置 strategy='quantile'（使每个 bin 样本数更均衡，避免空 bin）；
+
+    对于样本极少的类或 bin，可自动跳过无效 bin 或加以提示；
+
+    推荐使用 np.clip(prob, 0, 1) 保证概率合法；
+
+    最终输出 5 张图，每张图为一个模型对应的 calibration 曲线图，包含该模型在 所有 7 个类别上的 calibration 曲线；
+
+    每条线为一个 class；
+
+    不绘制“perfect calibration”虚线；
+
+    设置 plt.axis('equal')；
+
+    图例缩小、放在右侧；
+
+    文件名统一为：calibration_curve_{model_name}.png。
+
+P-max直方图（同时展示准确率）：
+    对每个模型X，制作一个直方图，x轴是概率，y轴是数量。 (x,y) 
+    表示模型X输出的概率分布中最大值是x的样本有y个.
+    实际制作时要对x轴分bin。
+    所以（(x1,x2),y）表示，总共有y个样本，使得模型X输出的概率分布中最大值在(x1,x2)之间。
+    然后在每个直方图柱子上标注，分配到这个bin的样本中，实际判定正确的样本数量/y \times 100%.
